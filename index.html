@@ -1,1 +1,1618 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Home Workout Tracker</title>
+
+<style>
+:root {
+  --bg:#0f1115;
+  --panel:#171a21;
+  --panel2:#1f2430;
+  --text:#f5f7fb;
+  --muted:#9aa4b2;
+  --accent:#7dd3fc;
+  --good:#86efac;
+  --border:#2b3240;
+}
+
+* { box-sizing:border-box; }
+
+body {
+  margin:0;
+  font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  background:var(--bg);
+  color:var(--text);
+}
+
+.wrap {
+  max-width:1200px;
+  margin:0 auto;
+  padding:24px;
+}
+
+h1 { margin:0 0 6px; font-size:32px; }
+.sub { color:var(--muted); margin-bottom:18px; }
+
+.toolbar {
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-bottom:18px;
+}
+
+button {
+  border:1px solid var(--border);
+  background:var(--panel2);
+  color:var(--text);
+  padding:10px 14px;
+  border-radius:10px;
+  cursor:pointer;
+  font-weight:700;
+}
+
+button:hover { border-color:var(--accent); }
+
+.primary {
+  background:var(--accent);
+  color:#071018;
+  border-color:transparent;
+}
+
+.calendar {
+  display:grid;
+  grid-template-columns:repeat(7,1fr);
+  gap:10px;
+  margin-bottom:22px;
+}
+
+.day {
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:14px;
+  min-height:135px;
+  cursor:pointer;
+}
+
+.day:hover { border-color:var(--accent); }
+.day.active { outline:2px solid var(--accent); }
+.day.done { border-color:var(--good); }
+
+.dow { font-weight:800; margin-bottom:8px; }
+.focus { font-size:14px; color:var(--accent); font-weight:700; }
+.run { font-size:12px; color:var(--muted); margin-top:5px; }
+.status { margin-top:14px; font-size:12px; color:var(--good); }
+
+.panel {
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:18px;
+}
+
+.panel h2 { margin-top:0; }
+
+.exercise {
+  display:grid;
+  grid-template-columns:2fr .8fr .8fr .8fr;
+  gap:10px;
+  align-items:center;
+  padding:12px 0;
+  border-bottom:1px solid var(--border);
+}
+
+.exercise:last-child { border-bottom:0; }
+
+.prescription {
+  display:block;
+  color:var(--muted);
+  font-size:13px;
+  margin-top:4px;
+}
+
+input, textarea {
+  width:100%;
+  background:#10141b;
+  color:var(--text);
+  border:1px solid var(--border);
+  border-radius:9px;
+  padding:9px;
+}
+
+textarea {
+  min-height:75px;
+  resize:vertical;
+}
+
+.labels {
+  display:grid;
+  grid-template-columns:2fr .8fr .8fr .8fr;
+  gap:10px;
+  color:var(--muted);
+  font-size:12px;
+  padding-bottom:6px;
+}
+
+.runbox, .notes {
+  margin-top:18px;
+  padding-top:16px;
+  border-top:1px solid var(--border);
+}
+
+.run-grid {
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr;
+  gap:10px;
+}
+
+.bottom-actions {
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-top:16px;
+}
+
+.history { margin-top:22px; }
+
+.history-item {
+  padding:10px 0;
+  border-bottom:1px solid var(--border);
+  color:var(--muted);
+  font-size:14px;
+}
+
+/* Exercise names */
+
+.exercise-name-btn {
+  appearance:none;
+  border:0;
+  background:transparent;
+  color:var(--text);
+  padding:0;
+  margin:0;
+  font:inherit;
+  font-weight:800;
+  text-align:left;
+  cursor:pointer;
+  text-decoration:underline;
+  text-decoration-style:dotted;
+  text-underline-offset:4px;
+}
+
+.exercise-name-btn:hover { color:var(--accent); }
+
+/* Exercise explanation popup */
+
+.modal-backdrop {
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.75);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+  z-index:9999;
+}
+
+.modal-backdrop.open { display:flex; }
+
+.exercise-modal {
+  width:min(550px,100%);
+  max-height:85vh;
+  overflow:auto;
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:18px;
+  padding:22px;
+}
+
+.modal-head {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  margin-bottom:18px;
+}
+
+.modal-head h3 {
+  margin:0;
+  font-size:24px;
+}
+
+.close-modal {
+  width:42px;
+  height:42px;
+  padding:0;
+  border-radius:50%;
+  font-size:24px;
+  line-height:1;
+  cursor:pointer;
+  flex-shrink:0;
+}
+
+.cue-list {
+  margin:10px 0 0;
+  padding-left:22px;
+  color:var(--muted);
+}
+
+.cue-list li { margin:9px 0; }
+
+@media(max-width:900px) {
+  .calendar { grid-template-columns:1fr 1fr; }
+}
+
+@media(max-width:650px) {
+  .wrap { padding:14px; }
+  .calendar { grid-template-columns:1fr; }
+
+  .exercise,.labels {
+    grid-template-columns:1.4fr .7fr .7fr;
+  }
+
+  .exercise input:nth-of-type(3),
+  .labels span:last-child {
+    display:none;
+  }
+
+  .run-grid { grid-template-columns:1fr; }
+}
+</style>
+</head>
+
+<body>
+
+<div class="wrap">
+
+<h1>Home Workout Tracker</h1>
+
+<div class="sub">
+15–20 minute strength + speed plan • Titan bench + PowerBlock dumbbells
+</div>
+
+<div class="sub">
+Four-week rotation: lift heavy, build conditioning, and keep enough variation to stay interesting.
+</div>
+
+<div class="toolbar">
+<button id="prevWeek">← Previous Week</button>
+<button id="todayBtn" class="primary">This Week</button>
+<button id="nextWeek">Next Week →</button>
+<button id="exportBtn">Export Data</button>
+<button id="resetBtn">Reset All Data</button>
+</div>
+
+<div id="calendar" class="calendar"></div>
+
+<div class="panel">
+
+<h2 id="dayTitle"></h2>
+<div id="daySubtitle" class="sub"></div>
+
+<div class="labels">
+<span>Exercise</span>
+<span>Weight</span>
+<span>Reps</span>
+<span>Sets</span>
+</div>
+
+<div id="exerciseList"></div>
+
+<div id="runBox" class="runbox"></div>
+
+<div class="notes">
+<strong>Notes</strong>
+<textarea id="notes" placeholder="How did you feel? Anything to change next time?"></textarea>
+</div>
+
+<div class="bottom-actions">
+<button id="saveBtn" class="primary">Save Workout</button>
+<button id="completeBtn">Mark Complete</button>
+</div>
+
+<div class="history">
+<h3>Recent entries for this workout</h3>
+<div id="historyList"></div>
+</div>
+
+</div>
+</div>
+
+<!-- EXERCISE GUIDE -->
+
+<div id="exerciseModalBackdrop" class="modal-backdrop">
+
+<div class="exercise-modal">
+
+<div class="modal-head">
+<h3 id="exerciseModalTitle">Exercise Guide</h3>
+<button id="closeExerciseModal" class="close-modal" type="button">×</button>
+</div>
+
+<div id="exerciseModalContent"></div>
+
+</div>
+</div>
+
+<script>
+
+/* =========================
+   FOUR WEEK WORKOUT PROGRAM
+========================= */
+
+const rotationPlan = {
+
+1: {
+
+1:{
+name:"Chest + Short Sprints",
+focus:"Chest",
+run:"20 sec fast / 40 sec walk × 5",
+exercises:[
+["DB Bench Press","4 × 6"],
+["Incline DB Press","3 × 6–8"],
+["DB Squeeze Press","2 × 8"]
+]},
+
+2:{
+name:"Heavy Legs",
+focus:"Legs",
+run:"No run",
+exercises:[
+["Goblet Squat","4 × 6–8"],
+["Bulgarian Split Squat","3 × 6 each leg"],
+["DB Romanian Deadlift","4 × 6"],
+["DB Calf Raise","2 × 10"]
+]},
+
+3:{
+name:"Back + Run",
+focus:"Back",
+run:"30 sec fast / 60 sec walk × 4",
+exercises:[
+["One-Arm DB Row","4 × 6 each"],
+["Chest-Supported DB Row","3 × 8"],
+["DB Pullover","2 × 8"]
+]},
+
+4:{
+name:"Shoulders",
+focus:"Shoulders",
+run:"No run",
+exercises:[
+["Seated DB Shoulder Press","4 × 6"],
+["Arnold Press","3 × 8"],
+["Lateral Raise","3 × 10"],
+["Rear Delt Fly","3 × 10"],
+["DB Push Press","3 × 6"]
+]},
+
+5:{
+name:"Arms + Fast Run",
+focus:"Arms",
+run:"5–8 minute hard benchmark route",
+exercises:[
+["Heavy DB Curl","3 × 6–8"],
+["DB Skull Crusher","3 × 6–8"],
+["Hammer Curl","3 × 8"],
+["Close-Grip DB Bench","3 × 8"]
+]},
+
+6:{
+name:"Full Body AMRAP",
+focus:"Full Body / CrossFit",
+run:"100–150m run each round",
+exercises:[
+["DB Thruster","6 reps"],
+["DB Romanian Deadlift","8 reps"],
+["DB Row","6 each arm"],
+["Push-ups","8 reps"]
+]},
+
+0:{
+name:"Recovery",
+focus:"Recovery",
+run:"Walk / mobility",
+exercises:[
+["Easy Walk / Mobility","20–30 min optional"]
+]}
+
+},
+
+2:{
+
+1:{
+name:"Chest Variation + Intervals",
+focus:"Chest",
+run:"6 × 100m fast, walk back recovery",
+exercises:[
+["Incline DB Press","4 × 6"],
+["DB Bench Press","3 × 8"],
+["Push-ups","2 quality sets"]
+]},
+
+2:{
+name:"Single-Leg Legs",
+focus:"Legs",
+run:"No run",
+exercises:[
+["Bulgarian Split Squat","4 × 6 each"],
+["Goblet Squat","3 × 10"],
+["DB Romanian Deadlift","3 × 8"],
+["DB Calf Raise","3 × 12"]
+]},
+
+3:{
+name:"Back Variation + Speed",
+focus:"Back",
+run:"4 × 200m fast, 75–90 sec walk",
+exercises:[
+["Chest-Supported DB Row","4 × 6–8"],
+["One-Arm DB Row","3 × 8 each"],
+["DB Pullover","3 × 10"]
+]},
+
+4:{
+name:"Shoulder Volume",
+focus:"Shoulders",
+run:"No run",
+exercises:[
+["Arnold Press","4 × 6–8"],
+["Seated DB Shoulder Press","3 × 8"],
+["Lateral Raise","3 × 12"],
+["Rear Delt Fly","3 × 12"]
+]},
+
+5:{
+name:"Arms + Sprint Finish",
+focus:"Arms",
+run:"8 × 20 sec fast / 40 sec walk",
+exercises:[
+["Hammer Curl","4 × 6–8"],
+["Close-Grip DB Bench","4 × 6–8"],
+["Heavy DB Curl","2 × 10"],
+["DB Skull Crusher","2 × 10"]
+]},
+
+6:{
+name:"Full Body EMOM",
+focus:"Full Body / CrossFit",
+run:"Every 4th minute: 100–150m fast run",
+exercises:[
+["Goblet Squat","8 reps"],
+["DB Push Press","6 reps"],
+["DB Row","6 each arm"],
+["Push-ups","8 reps"]
+]},
+
+0:{
+name:"Recovery",
+focus:"Recovery",
+run:"Walk / mobility",
+exercises:[
+["Easy Walk / Mobility","20–30 min optional"]
+]}
+
+},
+
+3:{
+
+1:{
+name:"Chest Strength + Hills",
+focus:"Chest",
+run:"5–6 × 15–20 sec hard hill or flat efforts",
+exercises:[
+["DB Bench Press","5 × 5"],
+["Incline DB Press","3 × 6"],
+["DB Squeeze Press","2 × 10"]
+]},
+
+2:{
+name:"Leg Strength",
+focus:"Legs",
+run:"No run",
+exercises:[
+["Goblet Squat","5 × 5"],
+["DB Romanian Deadlift","4 × 6"],
+["Bulgarian Split Squat","2 × 8 each"],
+["DB Calf Raise","2 × 15"]
+]},
+
+3:{
+name:"Back Strength + Intervals",
+focus:"Back",
+run:"5 × 30 sec hard / 60 sec walk",
+exercises:[
+["One-Arm DB Row","5 × 5 each"],
+["Chest-Supported DB Row","3 × 6"],
+["DB Pullover","2 × 12"]
+]},
+
+4:{
+name:"Shoulders + Conditioning",
+focus:"Shoulders",
+run:"No run",
+exercises:[
+["Seated DB Shoulder Press","5 × 5"],
+["DB Push Press","3 × 6"],
+["Lateral Raise","3 × 12"],
+["Rear Delt Fly","3 × 12"]
+]},
+
+5:{
+name:"Arms + Hard Run",
+focus:"Arms",
+run:"6–8 minute hard continuous run",
+exercises:[
+["Heavy DB Curl","4 × 6"],
+["DB Skull Crusher","4 × 6"],
+["Hammer Curl","3 × 8"],
+["Close-Grip DB Bench","3 × 8"]
+]},
+
+6:{
+name:"Full Body Chipper",
+focus:"Full Body / CrossFit",
+run:"Finish with 400–600m hard but controlled",
+exercises:[
+["DB Thruster","20 total"],
+["DB Romanian Deadlift","30 total"],
+["DB Row","20 each arm"],
+["Push-ups","30 total"]
+]},
+
+0:{
+name:"Recovery",
+focus:"Recovery",
+run:"Walk / mobility",
+exercises:[
+["Easy Walk / Mobility","20–30 min optional"]
+]}
+
+},
+
+4:{
+
+1:{
+name:"Chest Benchmark",
+focus:"Chest",
+run:"4 × 100m fast with full recovery",
+exercises:[
+["DB Bench Press","Top 6 reps + 2 × 8"],
+["Incline DB Press","3 × 6"],
+["Push-ups","1 max-quality set"]
+]},
+
+2:{
+name:"Leg Benchmark",
+focus:"Legs",
+run:"No run",
+exercises:[
+["Goblet Squat","Top 8 reps + 2 × 10"],
+["DB Romanian Deadlift","Top 6 reps + 2 × 8"],
+["Bulgarian Split Squat","2 × 6 each"]
+]},
+
+3:{
+name:"Back Benchmark + Run",
+focus:"Back",
+run:"4 × 200m — keep splits even",
+exercises:[
+["One-Arm DB Row","Top 6 each + 2 × 8"],
+["Chest-Supported DB Row","3 × 8"],
+["DB Pullover","2 × 10"]
+]},
+
+4:{
+name:"Shoulder Benchmark",
+focus:"Shoulders",
+run:"No run",
+exercises:[
+["Seated DB Shoulder Press","Top 6 + 2 × 8"],
+["Arnold Press","3 × 8"],
+["Lateral Raise","2 × 15"],
+["Rear Delt Fly","2 × 15"]
+]},
+
+5:{
+name:"Arms + Benchmark Run",
+focus:"Arms",
+run:"Repeat your 5–8 minute benchmark route",
+exercises:[
+["Heavy DB Curl","3 × 6–8"],
+["Close-Grip DB Bench","3 × 6–8"],
+["Hammer Curl","2 × 10"],
+["DB Skull Crusher","2 × 10"]
+]},
+
+6:{
+name:"Benchmark WOD",
+focus:"Full Body / CrossFit",
+run:"100–150m each round",
+exercises:[
+["DB Thruster","6 reps"],
+["DB Romanian Deadlift","8 reps"],
+["DB Row","6 each arm"],
+["Push-ups","8 reps"]
+]},
+
+0:{
+name:"Recovery",
+focus:"Recovery",
+run:"Walk / mobility",
+exercises:[
+["Easy Walk / Mobility","20–30 min optional"]
+]}
+
+}
+
+};
+
+
+/* =========================
+   EXERCISE INSTRUCTIONS
+========================= */
+
+const exerciseGuides = {
+
+"DB Bench Press":{
+cues:[
+"Lie on the bench with your feet firmly planted.",
+"Start with the dumbbells over your chest.",
+"Lower with your elbows about 30–45° from your body.",
+"Press back up until your arms are straight."
+],
+warning:"Keep your shoulder blades gently pulled back and don't bounce the dumbbells."
+},
+
+"Incline DB Press":{
+cues:[
+"Set the bench to roughly a 30–45° incline.",
+"Start with the dumbbells just outside your upper chest.",
+"Lower under control.",
+"Press up and slightly inward."
+],
+warning:"Don't set the bench too steep or the movement becomes mostly shoulders."
+},
+
+"DB Squeeze Press":{
+cues:[
+"Lie flat and press the dumbbells together.",
+"Keep them touching throughout the movement.",
+"Lower toward the middle of your chest.",
+"Squeeze the dumbbells together as you press."
+],
+warning:"Use less weight than your regular dumbbell bench press."
+},
+
+"Goblet Squat":{
+cues:[
+"Hold one dumbbell vertically against your chest.",
+"Keep your feet around shoulder width.",
+"Sit your hips down while keeping your chest tall.",
+"Drive through your whole foot to stand."
+],
+warning:"Keep your knees tracking in the same direction as your toes."
+},
+
+"Bulgarian Split Squat":{
+cues:[
+"Place your rear foot on the bench.",
+"Step the front foot far enough forward to stay balanced.",
+"Lower your body straight down.",
+"Drive through the front foot to stand."
+],
+warning:"Start lighter than you think. Balance and control matter more than load."
+},
+
+"DB Romanian Deadlift":{
+cues:[
+"Stand with dumbbells in front of your thighs.",
+"Keep a slight bend in your knees.",
+"Push your hips backward while keeping the dumbbells close to your legs.",
+"Drive your hips forward to stand."
+],
+warning:"This is a hip hinge, not a squat. Keep your back neutral."
+},
+
+"DB Calf Raise":{
+cues:[
+"Stand tall with dumbbells at your sides.",
+"Rise as high as possible onto the balls of your feet.",
+"Pause briefly at the top.",
+"Lower slowly."
+],
+warning:"Avoid bouncing through the reps."
+},
+
+"One-Arm DB Row":{
+cues:[
+"Brace one hand on the bench.",
+"Keep your torso stable.",
+"Pull the dumbbell toward your hip.",
+"Lower until your arm is long."
+],
+warning:"Don't rotate your torso to move more weight."
+},
+
+"Chest-Supported DB Row":{
+cues:[
+"Set the bench to an incline and lie chest-down.",
+"Let the dumbbells hang beneath your shoulders.",
+"Pull your elbows backward toward your hips.",
+"Squeeze your upper back and lower slowly."
+],
+warning:"Keep your chest against the bench."
+},
+
+"DB Pullover":{
+cues:[
+"Lie on the bench holding one dumbbell above your chest.",
+"Keep a soft bend in your elbows.",
+"Lower the dumbbell behind your head.",
+"Use your lats to pull it back over your chest."
+],
+warning:"Only lower as far as your shoulders comfortably allow."
+},
+
+"Seated DB Shoulder Press":{
+cues:[
+"Sit tall with your back supported.",
+"Start with dumbbells around shoulder height.",
+"Press overhead.",
+"Lower under control."
+],
+warning:"Keep your ribs down instead of arching your lower back."
+},
+
+"Arnold Press":{
+cues:[
+"Start with the dumbbells in front of your shoulders.",
+"Your palms should face you.",
+"Rotate your palms outward while pressing overhead.",
+"Reverse the motion as you lower."
+],
+warning:"The rotation should feel smooth and controlled."
+},
+
+"Lateral Raise":{
+cues:[
+"Stand tall with dumbbells at your sides.",
+"Keep a slight bend in your elbows.",
+"Raise your arms out to the sides.",
+"Stop around shoulder height and lower slowly."
+],
+warning:"Use lighter weight and avoid swinging."
+},
+
+"Rear Delt Fly":{
+cues:[
+"Hinge forward with a neutral back.",
+"Let the dumbbells hang beneath you.",
+"Open your arms out wide.",
+"Squeeze the back of your shoulders."
+],
+warning:"Don't shrug or turn the movement into a row."
+},
+
+"DB Push Press":{
+cues:[
+"Hold the dumbbells at shoulder height.",
+"Dip slightly through your knees and hips.",
+"Drive through your legs.",
+"Use that momentum to press the dumbbells overhead."
+],
+warning:"The dip is shallow. Don't turn it into a full squat."
+},
+
+"Heavy DB Curl":{
+cues:[
+"Stand tall with dumbbells at your sides.",
+"Keep your elbows near your body.",
+"Curl the dumbbells upward.",
+"Lower slowly."
+],
+warning:"Avoid leaning backward or swinging the weight."
+},
+
+"DB Skull Crusher":{
+cues:[
+"Lie on the bench with dumbbells above your chest.",
+"Keep your upper arms mostly vertical.",
+"Bend at the elbows and lower the dumbbells toward your head.",
+"Extend your elbows to return."
+],
+warning:"Use a comfortable range of motion for your elbows."
+},
+
+"Hammer Curl":{
+cues:[
+"Hold the dumbbells with palms facing each other.",
+"Keep your elbows close to your sides.",
+"Curl while maintaining the neutral grip.",
+"Lower under control."
+],
+warning:"Keep your torso still."
+},
+
+"Close-Grip DB Bench":{
+cues:[
+"Lie flat with the dumbbells close together.",
+"Lower with your elbows tucked near your sides.",
+"Press back up.",
+"Focus on driving through your triceps."
+],
+warning:"Keep your wrists stacked over your elbows."
+},
+
+"DB Thruster":{
+cues:[
+"Hold the dumbbells at shoulder height.",
+"Squat down with your chest tall.",
+"Drive hard through the floor.",
+"As you stand, use your leg drive to press the dumbbells overhead.",
+"Finish tall with your arms straight."
+],
+warning:"Use a weight you can move smoothly. Don't over-arch your lower back overhead."
+},
+
+"DB Row":{
+cues:[
+"Hinge forward with a flat back.",
+"Let the dumbbells hang beneath you.",
+"Pull toward your hips.",
+"Lower under control."
+],
+warning:"Don't jerk the dumbbells or round your back."
+},
+
+"Push-ups":{
+cues:[
+"Start in a straight-body plank.",
+"Place your hands slightly outside shoulder width.",
+"Lower your chest toward the floor.",
+"Press back up while keeping your body rigid."
+],
+warning:"Don't let your hips sag."
+},
+
+"Easy Walk / Mobility":{
+cues:[
+"Keep the effort easy.",
+"Walk comfortably and loosen up.",
+"Spend a few minutes moving your hips, shoulders and upper back.",
+"Finish feeling better than when you started."
+],
+warning:"Recovery day should not turn into another hard workout."
+}
+
+};
+
+
+/* =========================
+   DATE + STORAGE
+========================= */
+
+const state = {
+weekOffset:0,
+selectedDate:null
+};
+
+function isoDate(d) {
+const x = new Date(d);
+x.setMinutes(x.getMinutes() - x.getTimezoneOffset());
+return x.toISOString().slice(0,10);
+}
+
+function startOfWeek(d) {
+const x = new Date(d);
+x.setDate(x.getDate() - x.getDay());
+x.setHours(0,0,0,0);
+return x;
+}
+
+function getWeekStart() {
+const start = startOfWeek(new Date());
+start.setDate(start.getDate() + state.weekOffset * 7);
+return start;
+}
+
+function getRotationWeek(date) {
+const anchor = startOfWeek(new Date(2026,7,9));
+const current = startOfWeek(date);
+const diff = Math.floor((current-anchor)/(7*24*60*60*1000));
+return ((diff % 4)+4)%4+1;
+}
+
+function getPlanForDate(date) {
+return rotationPlan[getRotationWeek(date)][date.getDay()];
+}
+
+function workoutKey(date) {
+return "workout_" + isoDate(date);
+}
+
+function loadEntry(date) {
+try {
+return JSON.parse(localStorage.getItem(workoutKey(date))) || {};
+} catch {
+return {};
+}
+}
+
+function saveEntry(date,data) {
+localStorage.setItem(workoutKey(date),JSON.stringify(data));
+}
+
+
+/* REMEMBER WHICH DAY USER WAS VIEWING */
+
+function saveViewState() {
+if(state.selectedDate) {
+localStorage.setItem(
+"workout_last_selected_date",
+isoDate(state.selectedDate)
+);
+}
+}
+
+function restoreViewState() {
+
+const saved =
+localStorage.getItem("workout_last_selected_date");
+
+if(!saved) {
+state.selectedDate = new Date();
+state.weekOffset = 0;
+return;
+}
+
+const parts = saved.split("-").map(Number);
+
+state.selectedDate =
+new Date(parts[0],parts[1]-1,parts[2]);
+
+const thisWeek = startOfWeek(new Date());
+const selectedWeek = startOfWeek(state.selectedDate);
+
+state.weekOffset =
+Math.round(
+(selectedWeek-thisWeek) /
+(7*24*60*60*1000)
+);
+
+}
+
+
+/* =========================
+   CALENDAR
+========================= */
+
+function renderCalendar() {
+
+const calendar =
+document.getElementById("calendar");
+
+calendar.innerHTML="";
+
+const start = getWeekStart();
+
+const names =
+["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+
+for(let i=0;i<7;i++) {
+
+const date = new Date(start);
+date.setDate(start.getDate()+i);
+
+const workout = getPlanForDate(date);
+const entry = loadEntry(date);
+
+const day =
+document.createElement("div");
+
+day.className="day";
+
+if(
+state.selectedDate &&
+isoDate(state.selectedDate)===isoDate(date)
+) {
+day.classList.add("active");
+}
+
+if(entry.complete) {
+day.classList.add("done");
+}
+
+day.innerHTML=`
+
+<div class="dow">
+${names[date.getDay()]} •
+${date.getMonth()+1}/${date.getDate()}
+</div>
+
+<div class="focus">
+Week ${getRotationWeek(date)} •
+${workout.name}
+</div>
+
+<div class="run">
+${workout.run}
+</div>
+
+${entry.complete ?
+'<div class="status">✓ Complete</div>' :
+''}
+
+`;
+
+day.onclick=()=>{
+
+state.selectedDate=date;
+
+saveViewState();
+
+renderCalendar();
+renderDay();
+
+};
+
+calendar.appendChild(day);
+
+}
+
+}
+
+
+/* =========================
+   WORKOUT PAGE
+========================= */
+
+function renderDay() {
+
+const date=state.selectedDate;
+
+const workout=getPlanForDate(date);
+
+const entry=loadEntry(date);
+
+document.getElementById("dayTitle").textContent =
+`Week ${getRotationWeek(date)} • ${workout.name} — ${
+date.toLocaleDateString(undefined,{
+weekday:"long",
+month:"long",
+day:"numeric"
+})
+}`;
+
+document.getElementById("daySubtitle").textContent =
+`Primary focus: ${workout.focus}`;
+
+const list =
+document.getElementById("exerciseList");
+
+list.innerHTML="";
+
+workout.exercises.forEach((exercise,index)=>{
+
+const saved =
+(entry.exercises || [])[index] || {};
+
+const row =
+document.createElement("div");
+
+row.className="exercise";
+
+row.innerHTML=`
+
+<div>
+
+<button
+type="button"
+class="exercise-name-btn"
+data-guide="${exercise[0]}">
+${exercise[0]}
+</button>
+
+<span class="prescription">
+${exercise[1]}
+</span>
+
+</div>
+
+<input
+data-field="weight"
+data-idx="${index}"
+placeholder="lbs"
+value="${saved.weight || ""}">
+
+<input
+data-field="reps"
+data-idx="${index}"
+placeholder="reps"
+value="${saved.reps || ""}">
+
+<input
+data-field="sets"
+data-idx="${index}"
+placeholder="sets"
+value="${saved.sets || ""}">
+
+`;
+
+list.appendChild(row);
+
+});
+
+
+/* RUN SECTION */
+
+const runBox =
+document.getElementById("runBox");
+
+if(
+workout.run==="No run" ||
+date.getDay()===0
+) {
+
+runBox.innerHTML=`
+
+<strong>Conditioning</strong>
+<div class="sub">
+${workout.run}
+</div>
+
+`;
+
+} else {
+
+runBox.innerHTML=`
+
+<strong>Run / Conditioning</strong>
+
+<div class="sub">
+${workout.run}
+</div>
+
+<div class="run-grid">
+
+<input
+id="runDistance"
+placeholder="Distance / route"
+value="${entry.runDistance || ""}">
+
+<input
+id="runTime"
+placeholder="Time"
+value="${entry.runTime || ""}">
+
+<input
+id="runEffort"
+placeholder="Effort 1–10"
+value="${entry.runEffort || ""}">
+
+</div>
+
+`;
+
+}
+
+document.getElementById("notes").value =
+entry.notes || "";
+
+document.getElementById("completeBtn").textContent =
+entry.complete ?
+"Mark Incomplete" :
+"Mark Complete";
+
+renderHistory();
+
+}
+
+
+/* =========================
+   SAVE WORKOUT
+========================= */
+
+function collectEntry() {
+
+const inputs =
+[...document.querySelectorAll("#exerciseList input")];
+
+const exercises=[];
+
+inputs.forEach(input=>{
+
+const index =
+Number(input.dataset.idx);
+
+exercises[index] =
+exercises[index] || {};
+
+exercises[index][input.dataset.field] =
+input.value;
+
+});
+
+const existing =
+loadEntry(state.selectedDate);
+
+return {
+
+...existing,
+
+exercises,
+
+runDistance:
+document.getElementById("runDistance")?.value || "",
+
+runTime:
+document.getElementById("runTime")?.value || "",
+
+runEffort:
+document.getElementById("runEffort")?.value || "",
+
+notes:
+document.getElementById("notes").value,
+
+savedAt:
+new Date().toISOString()
+
+};
+
+}
+
+
+/* =========================
+   HISTORY
+========================= */
+
+function renderHistory() {
+
+const target =
+document.getElementById("historyList");
+
+const dayOfWeek =
+state.selectedDate.getDay();
+
+const rows=[];
+
+for(let i=0;i<140;i++) {
+
+const date=new Date();
+date.setDate(date.getDate()-i);
+
+if(date.getDay()!==dayOfWeek) continue;
+
+const entry=loadEntry(date);
+
+if(!entry.savedAt && !entry.complete) continue;
+
+const workout=getPlanForDate(date);
+
+const summary =
+(entry.exercises || [])
+.map((item,index)=>{
+
+if(
+!item ||
+(!item.weight && !item.reps && !item.sets)
+) return null;
+
+return `${workout.exercises[index]?.[0] || "Exercise"}:
+${item.weight || "-"} lb /
+${item.reps || "-"} reps /
+${item.sets || "-"} sets`;
+
+})
+.filter(Boolean)
+.slice(0,2)
+.join(" • ");
+
+rows.push(`
+
+<div class="history-item">
+
+<strong>
+${date.toLocaleDateString()}
+• Week ${getRotationWeek(date)}
+</strong>
+
+${entry.complete ? " ✓" : ""}
+
+<br>
+
+${summary || "Workout saved"}
+
+${entry.runTime ?
+` • Run: ${entry.runTime}` :
+""}
+
+</div>
+
+`);
+
+if(rows.length>=5) break;
+
+}
+
+target.innerHTML =
+rows.length ?
+rows.join("") :
+'<div class="history-item">No previous entries yet.</div>';
+
+}
+
+
+/* =========================
+   EXERCISE GUIDE
+========================= */
+
+function openExerciseGuide(name) {
+
+const guide =
+exerciseGuides[name];
+
+if(!guide) return;
+
+document.getElementById(
+"exerciseModalTitle"
+).textContent=name;
+
+document.getElementById(
+"exerciseModalContent"
+).innerHTML=`
+
+<strong>How to do it</strong>
+
+<ul class="cue-list">
+
+${guide.cues
+.map(cue=>`<li>${cue}</li>`)
+.join("")}
+
+</ul>
+
+<div class="runbox">
+
+<strong>Keep in mind:</strong>
+
+<span class="prescription">
+${guide.warning}
+</span>
+
+</div>
+
+`;
+
+document.getElementById(
+"exerciseModalBackdrop"
+).classList.add("open");
+
+}
+
+function closeExerciseGuide() {
+
+document.getElementById(
+"exerciseModalBackdrop"
+).classList.remove("open");
+
+}
+
+
+/* CLICK HANDLING */
+
+document.addEventListener("click",function(event){
+
+const guideButton =
+event.target.closest("[data-guide]");
+
+if(guideButton) {
+
+openExerciseGuide(
+guideButton.dataset.guide
+);
+
+return;
+
+}
+
+if(
+event.target.closest(
+"#closeExerciseModal"
+)
+) {
+
+closeExerciseGuide();
+
+return;
+
+}
+
+if(
+event.target.id ===
+"exerciseModalBackdrop"
+) {
+
+closeExerciseGuide();
+
+}
+
+});
+
+document.addEventListener(
+"keydown",
+function(event){
+
+if(event.key==="Escape") {
+closeExerciseGuide();
+}
+
+});
+
+
+/* =========================
+   BUTTONS
+========================= */
+
+document.getElementById("saveBtn").onclick=()=>{
+
+saveEntry(
+state.selectedDate,
+collectEntry()
+);
+
+renderCalendar();
+renderHistory();
+
+};
+
+document.getElementById("completeBtn").onclick=()=>{
+
+const entry=collectEntry();
+
+entry.complete =
+!loadEntry(state.selectedDate).complete;
+
+saveEntry(
+state.selectedDate,
+entry
+);
+
+renderCalendar();
+renderDay();
+
+};
+
+document.getElementById("prevWeek").onclick=()=>{
+
+state.weekOffset--;
+
+state.selectedDate =
+new Date(getWeekStart());
+
+saveViewState();
+
+renderCalendar();
+renderDay();
+
+};
+
+document.getElementById("nextWeek").onclick=()=>{
+
+state.weekOffset++;
+
+state.selectedDate =
+new Date(getWeekStart());
+
+saveViewState();
+
+renderCalendar();
+renderDay();
+
+};
+
+document.getElementById("todayBtn").onclick=()=>{
+
+state.weekOffset=0;
+state.selectedDate=new Date();
+
+saveViewState();
+
+renderCalendar();
+renderDay();
+
+};
+
+
+/* RESET */
+
+document.getElementById("resetBtn").onclick=()=>{
+
+if(
+confirm(
+"Delete all saved workout data from this browser?"
+)
+) {
+
+Object.keys(localStorage)
+.filter(key=>key.startsWith("workout_"))
+.forEach(key=>localStorage.removeItem(key));
+
+localStorage.removeItem(
+"workout_last_selected_date"
+);
+
+state.weekOffset=0;
+state.selectedDate=new Date();
+
+saveViewState();
+
+renderCalendar();
+renderDay();
+
+}
+
+};
+
+
+/* EXPORT */
+
+document.getElementById("exportBtn").onclick=()=>{
+
+const data={};
+
+Object.keys(localStorage)
+
+.filter(key=>key.startsWith("workout_"))
+
+.sort()
+
+.forEach(key=>{
+
+data[key.replace("workout_","")] =
+JSON.parse(
+localStorage.getItem(key)
+);
+
+});
+
+const blob =
+new Blob(
+[JSON.stringify(data,null,2)],
+{type:"application/json"}
+);
+
+const link =
+document.createElement("a");
+
+link.href =
+URL.createObjectURL(blob);
+
+link.download =
+"home-workout-history.json";
+
+link.click();
+
+URL.revokeObjectURL(link.href);
+
+};
+
+
+/* =========================
+   START APP
+========================= */
+
+restoreViewState();
+
+renderCalendar();
+
+renderDay();
+
+</script>
+
+</body>
+</html>
